@@ -1,0 +1,50 @@
+name: my-first-workflow
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  MY_SUPER_LONG_NAME_WORKFLOW_LEVEL_ENV_VAR: "hello"
+
+jobs:
+  # my-first-job runs on a different runner than my-second-job
+  my-first-job:
+    env:
+      MY_JOB_LEVEL_ENV_VAR: "my job var"
+    runs-on: ubuntu-latest # need either "runs-on" or "uses"
+    steps:
+
+        # Third run line won't work here, $MY_NAME will be blank.
+        # For those unfamiliar with the pipe in yaml: https://yaml-multiline.info/
+      - name: my-first-step
+        run: |
+          echo "hello world"
+          echo "MY_NAME=Laura" >> $GITHUB_ENV
+          echo "My name is: $MY_NAME"
+
+
+      - name: my-second-step
+        env:
+          MY_STEP_LEVEL_ENV_VAR: "hola"
+
+          # Re-declaring locally can help shorten var names
+          MY_REDECLARED_VAR: ${{ env.MY_SUPER_LONG_NAME_WORKFLOW_LEVEL_ENV_VAR }}
+
+          # First line will be pre-processed before sending to runner.
+          # Use whatever interpolation syntax is appropriate for
+          # the shell of your target runner.
+        run: |
+          echo "${{ env.MY_SUPER_LONG_NAME_WORKFLOW_LEVEL_ENV_VAR }} ${{ env.MY_NAME }}!"
+          echo "${MY_SUPER_LONG_NAME_WORKFLOW_LEVEL_ENV_VAR} $MY_NAME!"
+          echo ${MY_STEP_LEVEL_ENV_VAR} world
+          echo "${MY_REDECLARED_VAR} world!"
+          echo ${MY_REDECLARED_VAR} world!
+
+  my-second-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: my-first-step-in-second-job
+        run: |
+          echo "This won't print a var: $MY_JOB_LEVEL_ENV_VAR"
